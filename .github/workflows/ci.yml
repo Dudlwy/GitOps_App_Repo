@@ -29,8 +29,8 @@ jobs:
         git config --global user.name "CI Bot"
         
         # Clone the Manifest Repository using a Personal Access Token (PAT)
-        git clone https://${{ secrets.GIT_PAT }}@github.com/${{ github.repository_owner }}/gitops-manifests.git
-        cd gitops-manifests
+        git clone https://${{ secrets.GIT_PAT }}@github.com/${{ github.repository_owner }}/GitOps_Repo.git
+        cd GitOps_Repo
         
         # Update the image tag in deployment.yaml using sed
         sed -i "s|image: .*|image: ${{ secrets.DOCKERHUB_USERNAME }}/python-gitops-app:${{ github.sha }}|g" apps/python-app/deployment.yaml
