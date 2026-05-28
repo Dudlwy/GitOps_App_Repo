@@ -1,0 +1,41 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and Push Docker Image
+      run: |
+        IMAGE_TAG=${{ github.sha }}
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/python-gitops-app:$IMAGE_TAG .
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/python-gitops-app:$IMAGE_TAG
+
+    - name: Update GitOps Manifest Repository
+      run: |
+        git config --global user.email "ci-bot@example.com"
+        git config --global user.name "CI Bot"
+        
+        # Clone the Manifest Repository using a Personal Access Token (PAT)
+        git clone https://${{ secrets.GIT_PAT }}@github.com/${{ github.repository_owner }}/gitops-manifests.git
+        cd gitops-manifests
+        
+        # Update the image tag in deployment.yaml using sed
+        sed -i "s|image: .*|image: ${{ secrets.DOCKERHUB_USERNAME }}/python-gitops-app:${{ github.sha }}|g" apps/python-app/deployment.yaml
+        
+        # Commit and push changes back to the manifest repo
+        git add apps/python-app/deployment.yaml
+        git commit -m "chore: update python-app image to ${{ github.sha }} [skip ci]"
+        git push origin main
